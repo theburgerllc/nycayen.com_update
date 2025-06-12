@@ -138,8 +138,8 @@ Place your images in the `public/` directory:
 Copy `.env.example` to `.env.local` and configure:
 
 ```bash
-# Tidio Chat Widget (optional)
-NEXT_PUBLIC_TIDIO_KEY=your_tidio_public_key_here
+# Tidio Chat Widget (already integrated - no setup needed)
+# NEXT_PUBLIC_TIDIO_KEY=rlmuazdh9xqfjbiicz6swwgfhdhgyyca
 
 # Instagram Widget (optional) 
 NEXT_PUBLIC_INSTAGRAM_WIDGET_ID=your_embedsocial_widget_id

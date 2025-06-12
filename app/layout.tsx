@@ -151,12 +151,10 @@ export default function RootLayout({
       <body className={`bg-bg font-inter text-white antialiased ${inter.className}`}>
         <Navigation />
         {children}
-        {process.env.NEXT_PUBLIC_TIDIO_KEY && (
-          <Script
-            src={`//code.tidio.co/${process.env.NEXT_PUBLIC_TIDIO_KEY}.js`}
-            strategy="lazyOnload"
-          />
-        )}
+        <Script
+          src="//code.tidio.co/rlmuazdh9xqfjbiicz6swwgfhdhgyyca.js"
+          strategy="lazyOnload"
+        />
       </body>
     </html>
   );
