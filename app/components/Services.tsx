@@ -63,7 +63,7 @@ export default function Services() {
                   </li>
                 ))}
               </ul>
-              <button className="mt-auto inline-flex items-center gap-2 px-5 py-3 bg-amber-500 hover:bg-amber-light text-white rounded-full transition">
+              <button className="mt-auto inline-flex items-center gap-2 px-5 py-3 bg-amber-500 hover:bg-amber-400 text-white rounded-full transition">
                 Book Now <ArrowRight size={20} />
               </button>
             </motion.div>

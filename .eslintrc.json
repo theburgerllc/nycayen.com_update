@@ -1,0 +1,13 @@
+{
+  "extends": [
+    "next/core-web-vitals",
+    "next/typescript"
+  ],
+  "rules": {
+    "@next/next/no-img-element": "error",
+    "@next/next/no-page-custom-font": "warn",
+    "react-hooks/exhaustive-deps": "warn",
+    "prefer-const": "error",
+    "no-unused-vars": "warn"
+  }
+}

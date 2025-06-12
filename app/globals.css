@@ -1,3 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base styles and smooth scrolling */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    overflow-x: hidden;
+  }
+}
+
+/* Button styles */
+@layer components {
+  .btn-primary {
+    @apply bg-gradient-to-r from-amber-500 to-amber-600 text-black font-semibold rounded-lg transition-all duration-300 hover:from-amber-400 hover:to-amber-500 hover:shadow-lg hover:shadow-amber-500/25 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-black;
+  }
+  
+  .btn-outline {
+    @apply border-2 border-amber-400 text-amber-400 font-semibold rounded-lg transition-all duration-300 hover:bg-amber-400 hover:text-black focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-black;
+  }
+  
+  .glass {
+    @apply backdrop-blur-xl bg-black/20 border border-white/10;
+  }
+}
+
 /* Style Tidio chat iframe */
 #tidio-chat-iframe {
   bottom: 80px !important;
@@ -5,7 +35,9 @@
   width: 300px;
   height: 400px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
 }
+
 @media (max-width: 768px) {
   #tidio-chat-iframe {
     bottom: 60px !important;
@@ -13,15 +45,60 @@
     right: 20px !important;
   }
 }
-/* globals.css */
 
-/* Ensure feed is responsive, rounded and shadowed */
+/* Instagram feed styles */
 .embedsocial-instagram {
   border-radius: 0.75rem;
+  overflow: hidden;
 }
+
 .embedsocial-instagram img {
   object-fit: cover;
   width: 100%;
   height: auto;
   border-radius: inherit;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #111;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d97706;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #fbbf24;
+}
+
+/* Focus styles for accessibility */
+*:focus-visible {
+  outline: 2px solid #d97706;
+  outline-offset: 2px;
+}
+
+/* Custom button styles */
+.btn-outline {
+  display: inline-block;
+  padding: 12px 24px;
+  border: 2px solid #d97706;
+  color: #d97706;
+  background: transparent;
+  border-radius: 9999px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.btn-outline:hover {
+  background-color: #d97706;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.3);
 }

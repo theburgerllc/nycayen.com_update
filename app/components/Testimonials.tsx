@@ -64,4 +64,30 @@ export default function Testimonials() {
               ))}
           </AnimatePresence>
           <button
-            onClick={prev
+            onClick={prev}
+            className="absolute left-0 top-1/2 transform -translate-y-1/2 bg-amber-500 hover:bg-amber-400 text-white p-2 rounded-full shadow-lg"
+          >
+            ←
+          </button>
+          <button
+            onClick={next}
+            className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-amber-500 hover:bg-amber-400 text-white p-2 rounded-full shadow-lg"
+          >
+            →
+          </button>
+        </div>
+        <div className="flex justify-center space-x-2 mt-6">
+          {testimonials.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => setCurrent(idx)}
+              className={`w-3 h-3 rounded-full transition-colors ${
+                idx === current ? "bg-amber-500" : "bg-gray-600"
+              }`}
+            />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}

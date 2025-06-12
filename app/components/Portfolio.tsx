@@ -8,7 +8,10 @@ import BeforeAfter from "./BeforeAfter"; // Custom component below
 const allItems = [
   { id: 1, category: "Cuts", before: "/port/b1-before.jpg", after: "/port/b1-after.jpg" },
   { id: 2, category: "Color", before: "/port/b2-before.jpg", after: "/port/b2-after.jpg" },
-  // ...4 more items...
+  { id: 3, category: "Wigs", before: "/port/b3-before.jpg", after: "/port/b3-after.jpg" },
+  { id: 4, category: "Bridal", before: "/port/b4-before.jpg", after: "/port/b4-after.jpg" },
+  { id: 5, category: "Cuts", before: "/port/b5-before.jpg", after: "/port/b5-after.jpg" },
+  { id: 6, category: "Color", before: "/port/b6-before.jpg", after: "/port/b6-after.jpg" },
 ];
 
 const categories = ["All", "Cuts", "Color", "Wigs", "Bridal"];

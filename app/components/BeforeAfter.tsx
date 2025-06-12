@@ -4,7 +4,12 @@ import { useRef } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 
-export default function BeforeAfter({ before, after }) {
+interface BeforeAfterProps {
+  before: string;
+  after: string;
+}
+
+export default function BeforeAfter({ before, after }: BeforeAfterProps) {
   const ref = useRef<HTMLDivElement>(null);
   const x = useRef(0);
 
