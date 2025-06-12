@@ -1,109 +1,10 @@
 "use client";
-import { useState } from "react";
 import { motion } from "framer-motion";
 import { Phone, Mail, MapPin, Instagram, Clock, Send, CheckCircle } from "lucide-react";
-
-interface FormData {
-  name: string;
-  email: string;
-  phone: string;
-  service: string;
-  message: string;
-}
+import { useForm, ValidationError } from "@formspree/react";
 
 export default function Contact() {
-  const [submitted, setSubmitted] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState<FormData>({
-    name: '',
-    email: '',
-    phone: '',
-    service: 'Precision Cuts',
-    message: ''
-  });
-  const [errors, setErrors] = useState<Partial<FormData>>({});
-
-  const validateForm = (): boolean => {
-    const newErrors: Partial<FormData> = {};
-    
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
-    }
-    
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email is invalid';
-    }
-    
-    if (!formData.message.trim()) {
-      newErrors.message = 'Message is required';
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    
-    // Clear error when user starts typing
-    if (errors[name as keyof FormData]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateForm()) return;
-    
-    setIsSubmitting(true);
-    
-    try {
-      // Use Formspree for form submission (requires NEXT_PUBLIC_FORMSPREE_ENDPOINT env var)
-      const formspreeEndpoint = process.env.NEXT_PUBLIC_FORMSPREE_ENDPOINT;
-      
-      if (formspreeEndpoint) {
-        const response = await fetch(formspreeEndpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            name: formData.name,
-            email: formData.email,
-            phone: formData.phone,
-            service: formData.service,
-            message: formData.message,
-            _subject: `New inquiry from ${formData.name} - ${formData.service}`,
-          }),
-        });
-
-        if (response.ok) {
-          setSubmitted(true);
-          // Reset form
-          setFormData({ name: '', email: '', phone: '', service: 'Precision Cuts', message: '' });
-        } else {
-          throw new Error('Form submission failed');
-        }
-      } else {
-        // Fallback: mailto link for direct email
-        const subject = encodeURIComponent(`Hair Artistry Inquiry - ${formData.service}`);
-        const body = encodeURIComponent(
-          `Name: ${formData.name}\nEmail: ${formData.email}\nPhone: ${formData.phone}\nService: ${formData.service}\n\nMessage:\n${formData.message}`
-        );
-        window.location.href = `mailto:hello@nycayen.com?subject=${subject}&body=${body}`;
-        setSubmitted(true);
-      }
-    } catch (error) {
-      console.error('Submission error:', error);
-      alert('There was an error submitting your form. Please try again or contact us directly.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  const [state, handleSubmit] = useForm("mjkrwekw");
 
   const contactInfo = [
     {
@@ -211,25 +112,24 @@ export default function Contact() {
             viewport={{ once: true }}
             className="bg-stone-900 p-8 rounded-2xl"
           >
-            {submitted ? (
+            {state.succeeded ? (
               <div className="text-center py-12">
                 <CheckCircle className="w-16 h-16 text-amber-400 mx-auto mb-6" />
                 <h3 className="text-2xl font-playfair text-white mb-4">Thank You!</h3>
                 <p className="text-gray-300 mb-6">
                   Your message has been received. I'll get back to you within 24 hours to discuss your hair goals.
                 </p>
-                <button
-                  onClick={() => {
-                    setSubmitted(false);
-                    setFormData({ name: '', email: '', phone: '', service: 'Precision Cuts', message: '' });
-                  }}
-                  className="btn-outline px-6 py-3"
-                >
-                  Send Another Message
-                </button>
+                <div className="space-y-4">
+                  <p className="text-amber-400 font-medium">What happens next?</p>
+                  <ul className="text-sm text-gray-300 space-y-2">
+                    <li>• I'll review your inquiry and service needs</li>
+                    <li>• You'll receive a personal response within 24 hours</li>
+                    <li>• We'll schedule your consultation or appointment</li>
+                  </ul>
+                </div>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+              <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
                     <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-2">
@@ -239,19 +139,11 @@ export default function Contact() {
                       type="text"
                       id="name"
                       name="name"
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      className={`w-full p-4 rounded-lg bg-gray-800 text-white border ${
-                        errors.name ? 'border-red-500' : 'border-gray-700'
-                      } focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-colors`}
+                      required
+                      className="w-full p-4 rounded-lg bg-gray-800 text-white border border-gray-700 focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-colors"
                       placeholder="Your full name"
-                      aria-describedby="name-error"
                     />
-                    {errors.name && (
-                      <p id="name-error" className="mt-1 text-sm text-red-400" role="alert">
-                        {errors.name}
-                      </p>
-                    )}
+                    <ValidationError prefix="Name" field="name" errors={state.errors} className="mt-1 text-sm text-red-400" />
                   </div>
 
                   <div>
@@ -262,19 +154,11 @@ export default function Contact() {
                       type="email"
                       id="email"
                       name="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      className={`w-full p-4 rounded-lg bg-gray-800 text-white border ${
-                        errors.email ? 'border-red-500' : 'border-gray-700'
-                      } focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-colors`}
+                      required
+                      className="w-full p-4 rounded-lg bg-gray-800 text-white border border-gray-700 focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-colors"
                       placeholder="your.email@example.com"
-                      aria-describedby="email-error"
                     />
-                    {errors.email && (
-                      <p id="email-error" className="mt-1 text-sm text-red-400" role="alert">
-                        {errors.email}
-                      </p>
-                    )}
+                    <ValidationError prefix="Email" field="email" errors={state.errors} className="mt-1 text-sm text-red-400" />
                   </div>
                 </div>
 
@@ -287,11 +171,10 @@ export default function Contact() {
                       type="tel"
                       id="phone"
                       name="phone"
-                      value={formData.phone}
-                      onChange={handleInputChange}
                       className="w-full p-4 rounded-lg bg-gray-800 text-white border border-gray-700 focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-colors"
                       placeholder="(212) 555-0123"
                     />
+                    <ValidationError prefix="Phone" field="phone" errors={state.errors} className="mt-1 text-sm text-red-400" />
                   </div>
 
                   <div>
@@ -301,8 +184,6 @@ export default function Contact() {
                     <select
                       id="service"
                       name="service"
-                      value={formData.service}
-                      onChange={handleInputChange}
                       className="w-full p-4 rounded-lg bg-gray-800 text-white border border-gray-700 focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-colors"
                     >
                       <option value="Precision Cuts">Precision Cuts</option>
@@ -323,27 +204,19 @@ export default function Contact() {
                     id="message"
                     name="message"
                     rows={4}
-                    value={formData.message}
-                    onChange={handleInputChange}
-                    className={`w-full p-4 rounded-lg bg-gray-800 text-white border ${
-                      errors.message ? 'border-red-500' : 'border-gray-700'
-                    } focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-colors resize-none`}
+                    required
+                    className="w-full p-4 rounded-lg bg-gray-800 text-white border border-gray-700 focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-colors resize-none"
                     placeholder="Tell me about your hair goals, any specific requests, or questions you have..."
-                    aria-describedby="message-error"
                   />
-                  {errors.message && (
-                    <p id="message-error" className="mt-1 text-sm text-red-400" role="alert">
-                      {errors.message}
-                    </p>
-                  )}
+                  <ValidationError prefix="Message" field="message" errors={state.errors} className="mt-1 text-sm text-red-400" />
                 </div>
 
                 <button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={state.submitting}
                   className="w-full btn-primary py-4 text-center flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isSubmitting ? (
+                  {state.submitting ? (
                     <>
                       <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin" />
                       Sending Message...
