@@ -1,0 +1,15 @@
+/* Style Tidio chat iframe */
+#tidio-chat-iframe {
+  bottom: 80px !important;
+  right: 20px !important;
+  width: 300px;
+  height: 400px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+@media (max-width: 768px) {
+  #tidio-chat-iframe {
+    bottom: 60px !important;
+    width: calc(100% - 40px);
+    right: 20px !important;
+  }
+}
