@@ -2,6 +2,23 @@ import "./globals.css";
 import Script from "next/script";
 import Navigation from "./components/Navigation";
 import type { Metadata } from 'next';
+import { Playfair_Display, Inter } from 'next/font/google';
+
+// Optimize font loading
+const playfair = Playfair_Display({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-playfair',
+  weight: ['400', '500', '600', '700'],
+  style: ['normal', 'italic'],
+});
+
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-inter',
+  weight: ['300', '400', '500', '600', '700'],
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://nycayenmoore.com'),
@@ -56,9 +73,11 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
-  verification: {
-    google: 'your-google-verification-code',
-  },
+  ...(process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION && {
+    verification: {
+      google: process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION,
+    },
+  }),
 };
 
 const jsonLd = {
@@ -117,14 +136,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="scroll-smooth">
+    <html lang="en" className={`scroll-smooth ${playfair.variable} ${inter.variable}`}>
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600;700&display=swap"
-          rel="stylesheet"
-        />
         <link rel="icon" href="/favicon.ico" />
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
@@ -135,13 +148,15 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body className="bg-bg font-inter text-white antialiased">
+      <body className={`bg-bg font-inter text-white antialiased ${inter.className}`}>
         <Navigation />
         {children}
-        <Script
-          src="//code.tidio.co/YOUR_TIDIO_PUBLIC_KEY.js"
-          strategy="lazyOnload"
-        />
+        {process.env.NEXT_PUBLIC_TIDIO_KEY && (
+          <Script
+            src={`//code.tidio.co/${process.env.NEXT_PUBLIC_TIDIO_KEY}.js`}
+            strategy="lazyOnload"
+          />
+        )}
       </body>
     </html>
   );

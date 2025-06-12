@@ -1,13 +1,26 @@
 // app/sections/Hero.tsx
 "use client"
 import { motion } from "framer-motion";
-import Image from "next/image";
 import { ChevronDown } from "lucide-react";
 
 export default function Hero() {
   return (
     <section id="hero" className="relative w-full h-screen overflow-hidden">
-      <video src="/videos/hero-loop.mp4" autoPlay muted loop className="absolute inset-0 object-cover w-full h-full"/>
+      {/* Background video with fallback */}
+      <video 
+        src="/videos/hero-loop.mp4" 
+        autoPlay 
+        muted 
+        loop 
+        playsInline
+        className="absolute inset-0 object-cover w-full h-full"
+        onError={(e) => {
+          // Hide video if it fails to load
+          e.currentTarget.style.display = 'none';
+        }}
+      />
+      {/* Fallback background gradient */}
+      <div className="absolute inset-0 bg-gradient-to-br from-black via-stone-900 to-amber-900/20"/>
       <div className="absolute inset-0 bg-black/50 mix-blend-multiply"/>
       <div className="relative z-10 flex flex-col items-center justify-center h-full text-center px-6">
         <motion.h1

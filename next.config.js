@@ -1,8 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    optimizeCss: true,
-  },
+  experimental: {},
   trailingSlash: true,
   images: {
     formats: ['image/avif', 'image/webp'],

@@ -83,22 +83,7 @@
   outline-offset: 2px;
 }
 
-/* Custom button styles */
+/* Additional styles for better performance */
 .btn-outline {
-  display: inline-block;
-  padding: 12px 24px;
-  border: 2px solid #d97706;
-  color: #d97706;
-  background: transparent;
-  border-radius: 9999px;
-  font-weight: 600;
-  text-decoration: none;
-  transition: all 0.3s ease;
-}
-
-.btn-outline:hover {
-  background-color: #d97706;
-  color: white;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.3);
+  will-change: transform, box-shadow;
 }

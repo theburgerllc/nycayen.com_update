@@ -1,0 +1,23 @@
+# Placeholder Images Directory
+
+Add the following images for full functionality:
+
+## Required Images:
+- `nycayen-headshot.jpg` (400x500px) - Professional headshot for About section
+- `og-image.jpg` (1200x630px) - Social media preview image
+
+## Portfolio Images (400x300px each):
+- `../port/b1-before.jpg` & `../port/b1-after.jpg` - Hair cut transformation
+- `../port/b2-before.jpg` & `../port/b2-after.jpg` - Color transformation  
+- `../port/b3-before.jpg` & `../port/b3-after.jpg` - Wig styling
+- `../port/b4-before.jpg` & `../port/b4-after.jpg` - Bridal styling
+- `../port/b5-before.jpg` & `../port/b5-after.jpg` - Additional cuts
+- `../port/b6-before.jpg` & `../port/b6-after.jpg` - Additional color
+
+## Video:
+- `../videos/hero-loop.mp4` - Hero background video (or fallback image)
+
+## Icons:
+- `../favicon.ico` - Website favicon
+- `../apple-touch-icon.png` - iOS app icon
+- `../favicon-32x32.png` & `../favicon-16x16.png` - Browser favicons

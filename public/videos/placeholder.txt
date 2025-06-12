@@ -1,0 +1,6 @@
+# Hero Video Placeholder
+
+This directory should contain:
+- hero-loop.mp4 - Background video for hero section (recommended: 1920x1080, under 5MB)
+
+Alternative: Replace video with high-quality background image if video not available.

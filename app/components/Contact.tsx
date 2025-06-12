@@ -62,12 +62,44 @@ export default function Contact() {
     setIsSubmitting(true);
     
     try {
-      // Simulate API call - replace with actual implementation
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      console.log('Form submitted:', formData);
-      setSubmitted(true);
+      // Use Formspree for form submission (requires NEXT_PUBLIC_FORMSPREE_ENDPOINT env var)
+      const formspreeEndpoint = process.env.NEXT_PUBLIC_FORMSPREE_ENDPOINT;
+      
+      if (formspreeEndpoint) {
+        const response = await fetch(formspreeEndpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: formData.name,
+            email: formData.email,
+            phone: formData.phone,
+            service: formData.service,
+            message: formData.message,
+            _subject: `New inquiry from ${formData.name} - ${formData.service}`,
+          }),
+        });
+
+        if (response.ok) {
+          setSubmitted(true);
+          // Reset form
+          setFormData({ name: '', email: '', phone: '', service: 'Precision Cuts', message: '' });
+        } else {
+          throw new Error('Form submission failed');
+        }
+      } else {
+        // Fallback: mailto link for direct email
+        const subject = encodeURIComponent(`Hair Artistry Inquiry - ${formData.service}`);
+        const body = encodeURIComponent(
+          `Name: ${formData.name}\nEmail: ${formData.email}\nPhone: ${formData.phone}\nService: ${formData.service}\n\nMessage:\n${formData.message}`
+        );
+        window.location.href = `mailto:hello@nycayen.com?subject=${subject}&body=${body}`;
+        setSubmitted(true);
+      }
     } catch (error) {
       console.error('Submission error:', error);
+      alert('There was an error submitting your form. Please try again or contact us directly.');
     } finally {
       setIsSubmitting(false);
     }

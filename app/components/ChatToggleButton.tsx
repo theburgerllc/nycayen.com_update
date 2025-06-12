@@ -2,6 +2,15 @@
 "use client";
 import { useEffect } from "react";
 
+declare global {
+  interface Window {
+    tidioChatApi?: {
+      show: () => void;
+      open: () => void;
+    };
+  }
+}
+
 export default function ChatToggleButton() {
   useEffect(() => {
     const showChat = () => {

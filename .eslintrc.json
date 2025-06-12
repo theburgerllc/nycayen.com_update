@@ -8,6 +8,7 @@
     "@next/next/no-page-custom-font": "warn",
     "react-hooks/exhaustive-deps": "warn",
     "prefer-const": "error",
-    "no-unused-vars": "warn"
+    "no-unused-vars": "warn",
+    "react/no-unescaped-entities": "off"
   }
 }

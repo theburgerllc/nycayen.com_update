@@ -1,0 +1,12 @@
+# Portfolio Images Placeholder
+
+This directory should contain before/after transformation images:
+
+b1-before.jpg, b1-after.jpg (Hair Cuts)
+b2-before.jpg, b2-after.jpg (Color) 
+b3-before.jpg, b3-after.jpg (Wigs)
+b4-before.jpg, b4-after.jpg (Bridal)
+b5-before.jpg, b5-after.jpg (Cuts)
+b6-before.jpg, b6-after.jpg (Color)
+
+Each image should be approximately 400x300px for optimal display.

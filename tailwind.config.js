@@ -11,8 +11,8 @@ module.exports = {
         bg: '#111',
       },
       fontFamily: {
-        playfair: ["Playfair Display", "serif"],
-        inter: ["Inter", "sans-serif"],
+        playfair: ["var(--font-playfair)", "Playfair Display", "serif"],
+        inter: ["var(--font-inter)", "Inter", "sans-serif"],
       },
       keyframes: {
         shimmer: {

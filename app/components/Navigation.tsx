@@ -2,7 +2,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, Phone } from "lucide-react";
-import Image from "next/image";
 
 export default function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
