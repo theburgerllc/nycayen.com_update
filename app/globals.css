@@ -13,3 +13,15 @@
     right: 20px !important;
   }
 }
+/* globals.css */
+
+/* Ensure feed is responsive, rounded and shadowed */
+.embedsocial-instagram {
+  border-radius: 0.75rem;
+}
+.embedsocial-instagram img {
+  object-fit: cover;
+  width: 100%;
+  height: auto;
+  border-radius: inherit;
+}
