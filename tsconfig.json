@@ -12,6 +12,8 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
+    "target": "es2017",
+    "downlevelIteration": true,
     "plugins": [
       {
         "name": "next"
@@ -21,9 +23,11 @@
     "paths": {
       "@/*": ["./app/*"],
       "@/components/*": ["./app/components/*"],
-      "@/sections/*": ["./app/sections/*"]
+      "@/sections/*": ["./app/sections/*"],
+      "@/blog/*": ["./app/blog/*"],
+      "contentlayer/generated": ["./.contentlayer/generated"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", ".contentlayer/generated"],
   "exclude": ["node_modules"]
 }

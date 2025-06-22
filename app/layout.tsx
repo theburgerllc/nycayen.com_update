@@ -1,6 +1,7 @@
 import "./globals.css";
 import Script from "next/script";
 import Navigation from "./components/Navigation";
+import WebVitalsReporter from "./components/WebVitalsReporter";
 import type { Metadata } from 'next';
 import { Playfair_Display, Inter } from 'next/font/google';
 
@@ -149,12 +150,24 @@ export default function RootLayout({
         />
       </head>
       <body className={`bg-bg font-inter text-white antialiased ${inter.className}`}>
+        <WebVitalsReporter debug={process.env.NODE_ENV === 'development'} />
         <Navigation />
         {children}
         <Script
           src="//code.tidio.co/rlmuazdh9xqfjbiicz6swwgfhdhgyyca.js"
           strategy="lazyOnload"
         />
+        <Script id="sw-register" strategy="afterInteractive">
+          {`
+            if ('serviceWorker' in navigator) {
+              window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                  .then(registration => console.log('SW registered'))
+                  .catch(error => console.log('SW registration failed'));
+              });
+            }
+          `}
+        </Script>
       </body>
     </html>
   );
