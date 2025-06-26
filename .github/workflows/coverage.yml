@@ -1,0 +1,114 @@
+name: Coverage Report
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  coverage:
+    name: Generate Coverage Report
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests with coverage
+        run: npm run test:coverage
+
+      - name: Generate coverage badge
+        uses: tj-actions/coverage-badge-js@v2
+        with:
+          output: coverage/coverage-badge.svg
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage/lcov.info
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: true
+
+      - name: Upload coverage to Coveralls
+        uses: coverallsapp/github-action@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path-to-lcov: ./coverage/lcov.info
+
+      - name: Comment coverage on PR
+        if: github.event_name == 'pull_request'
+        uses: romeovs/lcov-reporter-action@v0.3.1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          lcov-file: ./coverage/lcov.info
+          delete-old-comments: true
+
+      - name: Archive coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: |
+            coverage/
+            !coverage/tmp/
+          retention-days: 30
+
+      - name: Check coverage thresholds
+        run: |
+          echo "Checking coverage thresholds..."
+          COVERAGE_LINES=$(cat coverage/coverage-summary.json | jq -r '.total.lines.pct')
+          COVERAGE_FUNCTIONS=$(cat coverage/coverage-summary.json | jq -r '.total.functions.pct')
+          COVERAGE_BRANCHES=$(cat coverage/coverage-summary.json | jq -r '.total.branches.pct')
+          COVERAGE_STATEMENTS=$(cat coverage/coverage-summary.json | jq -r '.total.statements.pct')
+          
+          echo "Lines: $COVERAGE_LINES%"
+          echo "Functions: $COVERAGE_FUNCTIONS%"
+          echo "Branches: $COVERAGE_BRANCHES%"
+          echo "Statements: $COVERAGE_STATEMENTS%"
+          
+          # Set thresholds
+          THRESHOLD=70
+          
+          if (( $(echo "$COVERAGE_LINES < $THRESHOLD" | bc -l) )); then
+            echo "Line coverage ($COVERAGE_LINES%) is below threshold ($THRESHOLD%)"
+            exit 1
+          fi
+          
+          if (( $(echo "$COVERAGE_FUNCTIONS < $THRESHOLD" | bc -l) )); then
+            echo "Function coverage ($COVERAGE_FUNCTIONS%) is below threshold ($THRESHOLD%)"
+            exit 1
+          fi
+          
+          if (( $(echo "$COVERAGE_BRANCHES < $THRESHOLD" | bc -l) )); then
+            echo "Branch coverage ($COVERAGE_BRANCHES%) is below threshold ($THRESHOLD%)"
+            exit 1
+          fi
+          
+          if (( $(echo "$COVERAGE_STATEMENTS < $THRESHOLD" | bc -l) )); then
+            echo "Statement coverage ($COVERAGE_STATEMENTS%) is below threshold ($THRESHOLD%)"
+            exit 1
+          fi
+          
+          echo "All coverage thresholds met!"
+
+      - name: Coverage summary
+        run: |
+          echo "## Coverage Report" >> $GITHUB_STEP_SUMMARY
+          echo "| Type | Coverage |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|----------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Lines | $(cat coverage/coverage-summary.json | jq -r '.total.lines.pct')% |" >> $GITHUB_STEP_SUMMARY
+          echo "| Functions | $(cat coverage/coverage-summary.json | jq -r '.total.functions.pct')% |" >> $GITHUB_STEP_SUMMARY
+          echo "| Branches | $(cat coverage/coverage-summary.json | jq -r '.total.branches.pct')% |" >> $GITHUB_STEP_SUMMARY
+          echo "| Statements | $(cat coverage/coverage-summary.json | jq -r '.total.statements.pct')% |" >> $GITHUB_STEP_SUMMARY

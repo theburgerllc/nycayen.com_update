@@ -1,0 +1,34 @@
+{
+  "rules": {
+    "require-name": "error",
+    "require-version": "error",
+    "require-description": "error",
+    "require-author": "error",
+    "require-license": "error",
+    "require-scripts": "error",
+    "require-keywords": "error",
+    "valid-values-license": ["error", ["MIT", "ISC", "Apache-2.0", "BSD-3-Clause"]],
+    "valid-values-name-scope": "off",
+    "no-duplicate-properties": "error",
+    "prefer-property-order": [
+      "error",
+      [
+        "name",
+        "version",
+        "description",
+        "keywords",
+        "author",
+        "license",
+        "private",
+        "scripts",
+        "dependencies",
+        "devDependencies",
+        "peerDependencies",
+        "optionalDependencies"
+      ]
+    ],
+    "require-repository": "off",
+    "require-homepage": "off",
+    "require-bugs": "off"
+  }
+}

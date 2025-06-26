@@ -115,7 +115,8 @@ async function updateMailchimpStatus(email: string, status: string) {
   if (!MAILCHIMP_API_KEY) return;
 
   try {
-    const subscriberHash = require('crypto')
+    const crypto = await import('crypto');
+    const subscriberHash = crypto
       .createHash('md5')
       .update(email.toLowerCase())
       .digest('hex');

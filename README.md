@@ -1,6 +1,7 @@
 # Nycayen Moore Hair Artistry Website
 
-A luxury hair artistry and wig design website built with Next.js 14, featuring modern design, smooth animations, and mobile-first responsive layout.
+A luxury hair artistry and wig design website built with Next.js 14, featuring modern design, smooth a
+nimations, and mobile-first responsive layout.
 
 ## 🚀 Features
 
@@ -216,4 +217,5 @@ MIT License - feel free to customize for your needs.
 
 ---
 
-Built with ❤️ using Next.js 14, TypeScript, and Tailwind CSS
+Built with ❤️ by Tim B. for the illustrious Mr. Nycayen Moore
+ using Next.js 14, TypeScript, and Tailwind CSS

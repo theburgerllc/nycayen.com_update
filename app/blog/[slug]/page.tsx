@@ -1,7 +1,6 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { getMDXComponent } from 'next-contentlayer/hooks';
-import { allBlogPosts } from 'contentlayer/generated';
+import { getAllBlogPosts, getBlogPostBySlug } from '../lib/mdx';
 import { BlogPostHeader } from '../components/BlogPostHeader';
 import { BlogPostContent } from '../components/BlogPostContent';
 import { BlogPostSidebar } from '../components/BlogPostSidebar';
@@ -16,11 +15,10 @@ interface BlogPostPageProps {
 }
 
 export async function generateStaticParams() {
-  return allBlogPosts
-    .filter(post => !post.draft)
-    .map(post => ({
-      slug: post.slug,
-    }));
+  const posts = getAllBlogPosts();
+  return posts.map(post => ({
+    slug: post.slug,
+  }));
 }
 
 export async function generateMetadata({ params }: BlogPostPageProps): Promise<Metadata> {

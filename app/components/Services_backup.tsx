@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { memo, useMemo } from "react";
+import { memo, useMemo, useCallback } from "react";
 
 const services = [
   {
@@ -97,4 +97,4 @@ export default memo(function Services() {
       </div>
     </section>
   );
-});
+}

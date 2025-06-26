@@ -1,4 +1,4 @@
-const { withContentlayer } = require('next-contentlayer');
+// const { withContentlayer } = require('next-contentlayer');
 const withBundleAnalyzer = require('@next/bundle-analyzer')({
   enabled: process.env.ANALYZE === 'true',
 });
@@ -9,11 +9,56 @@ const nextConfig = {
     optimizeCss: true,
     gzipSize: true,
     scrollRestoration: true,
+    serverComponentsExternalPackages: ['@prisma/client'],
+    optimizePackageImports: ['lodash', 'date-fns', 'react-icons'],
   },
-  trailingSlash: true,
+  trailingSlash: false,
   swcMinify: true,
   compiler: {
-    removeConsole: process.env.NODE_ENV === 'production',
+    removeConsole: process.env.NODE_ENV === 'production' ? {
+      exclude: ['error', 'warn']
+    } : false,
+    reactRemoveProperties: process.env.NODE_ENV === 'production' ? {
+      properties: ['^data-testid$']
+    } : false,
+  },
+  // Bundle optimization
+  webpack: (config, { dev, isServer }) => {
+    // Production optimizations
+    if (!dev) {
+      config.optimization.splitChunks = {
+        chunks: 'all',
+        cacheGroups: {
+          vendor: {
+            test: /[\\/]node_modules[\\/]/,
+            name: 'vendors',
+            chunks: 'all',
+          },
+          common: {
+            name: 'common',
+            minChunks: 2,
+            chunks: 'all',
+            enforce: true,
+          },
+        },
+      };
+    }
+
+    // Bundle analyzer
+    if (process.env.ANALYZE === 'true') {
+      const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
+      config.plugins.push(
+        new BundleAnalyzerPlugin({
+          analyzerMode: 'static',
+          openAnalyzer: false,
+          reportFilename: isServer
+            ? '../analyze/server.html'
+            : './analyze/client.html',
+        })
+      );
+    }
+
+    return config;
   },
   images: {
     formats: ['image/avif', 'image/webp'],
@@ -178,4 +223,4 @@ const nextConfig = {
   },
 };
 
-module.exports = withContentlayer(withBundleAnalyzer(nextConfig));
+module.exports = withBundleAnalyzer(nextConfig);

@@ -1,7 +1,7 @@
 // Analytics Tracking API Route
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { Security } from '@/app/lib/security';
+import { Security } from '../../../lib/security';
 
 // Event tracking schema
 const TrackingEventSchema = z.object({

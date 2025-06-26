@@ -1,4 +1,4 @@
-import { allBlogPosts } from 'contentlayer/generated';
+import { getAllBlogPosts, getBlogPostBySlug } from '../lib/mdx';
 import Fuse from 'fuse.js';
 import { 
   BlogPost, 
@@ -14,25 +14,11 @@ import {
 } from '../types';
 
 export function getAllPosts(): BlogPost[] {
-  return allBlogPosts
-    .filter(post => !post.draft)
-    .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
-    .map(post => ({
-      ...post,
-      publishedAt: new Date(post.publishedAt),
-      updatedAt: post.updatedAt ? new Date(post.updatedAt) : undefined,
-    }));
+  return getAllBlogPosts();
 }
 
 export function getPostBySlug(slug: string): BlogPost | null {
-  const post = allBlogPosts.find(post => post.slug === slug && !post.draft);
-  if (!post) return null;
-  
-  return {
-    ...post,
-    publishedAt: new Date(post.publishedAt),
-    updatedAt: post.updatedAt ? new Date(post.updatedAt) : undefined,
-  };
+  return getBlogPostBySlug(slug);
 }
 
 export function getFeaturedPosts(limit: number = 3): BlogPost[] {

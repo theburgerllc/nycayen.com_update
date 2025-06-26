@@ -4,6 +4,7 @@ import Navigation from "./components/Navigation";
 import WebVitalsReporter from "./components/WebVitalsReporter";
 import type { Metadata } from 'next';
 import { Playfair_Display, Inter } from 'next/font/google';
+import { AnalyticsProvider } from './components/AnalyticsProvider';
 
 // Optimize font loading
 const playfair = Playfair_Display({
@@ -150,9 +151,95 @@ export default function RootLayout({
         />
       </head>
       <body className={`bg-bg font-inter text-white antialiased ${inter.className}`}>
-        <WebVitalsReporter debug={process.env.NODE_ENV === 'development'} />
-        <Navigation />
-        {children}
+        <AnalyticsProvider>
+          <WebVitalsReporter debug={process.env.NODE_ENV === 'development'} />
+          <Navigation />
+          {children}
+        </AnalyticsProvider>
+        {/* Google Tag Manager */}
+        <Script
+          id="gtm"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+            (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+            new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+            j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+            'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+            })(window,document,'script','dataLayer','${process.env.NEXT_PUBLIC_GTM_ID || 'GTM-XXXXXXX'}');
+            `,
+          }}
+        />
+        
+        {/* Google Analytics 4 */}
+        <Script
+          src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID || 'G-XXXXXXXXXX'}`}
+          strategy="afterInteractive"
+        />
+        <Script id="ga4" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '${process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID || 'G-XXXXXXXXXX'}', {
+              page_title: document.title,
+              page_location: window.location.href,
+              debug_mode: ${process.env.NODE_ENV === 'development'},
+              anonymize_ip: true,
+              allow_enhanced_conversions: true,
+              allow_google_signals: true,
+              cookie_flags: 'secure;samesite=strict'
+            });
+          `}
+        </Script>
+
+        {/* Hotjar */}
+        {process.env.NEXT_PUBLIC_HOTJAR_ID && (
+          <Script id="hotjar" strategy="afterInteractive">
+            {`
+              (function(h,o,t,j,a,r){
+                h.hj=h.hj||function(){(h.hj.q=h.hj.q||[]).push(arguments)};
+                h._hjSettings={hjid:${process.env.NEXT_PUBLIC_HOTJAR_ID},hjsv:6};
+                a=o.getElementsByTagName('head')[0];
+                r=o.createElement('script');r.async=1;
+                r.src=t+h._hjSettings.hjid+j+h._hjSettings.hjsv;
+                a.appendChild(r);
+              })(window,document,'https://static.hotjar.com/c/hotjar-','.js?sv=');
+            `}
+          </Script>
+        )}
+
+        {/* Microsoft Clarity */}
+        {process.env.NEXT_PUBLIC_CLARITY_ID && (
+          <Script id="clarity" strategy="afterInteractive">
+            {`
+              (function(c,l,a,r,i,t,y){
+                c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+                t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+                y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+              })(window, document, "clarity", "script", "${process.env.NEXT_PUBLIC_CLARITY_ID}");
+            `}
+          </Script>
+        )}
+
+        {/* Facebook Pixel */}
+        {process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID && (
+          <Script id="facebook-pixel" strategy="afterInteractive">
+            {`
+              !function(f,b,e,v,n,t,s)
+              {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+              n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+              if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+              n.queue=[];t=b.createElement(e);t.async=!0;
+              t.src=v;s=b.getElementsByTagName(e)[0];
+              s.parentNode.insertBefore(t,s)}(window, document,'script',
+              'https://connect.facebook.net/en_US/fbevents.js');
+              fbq('init', '${process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID}');
+              fbq('track', 'PageView');
+            `}
+          </Script>
+        )}
+
         <Script
           src="//code.tidio.co/rlmuazdh9xqfjbiicz6swwgfhdhgyyca.js"
           strategy="lazyOnload"
