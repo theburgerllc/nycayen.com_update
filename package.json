@@ -32,7 +32,9 @@
     "prepare": "husky install",
     "pre-commit": "npm run lint && npm run type-check && npm run test:ci",
     "deploy:check": "node scripts/deploy-check.js",
-    "deploy:vercel": "npm run deploy:check && vercel"
+    "deploy:vercel": "npm run deploy:check && vercel",
+    "test:cron": "node scripts/test-cron.js",
+    "test:cron:local": "node scripts/test-cron.js --local"
   },
   "dependencies": {
     "@formspree/react": "^2.5.5",
