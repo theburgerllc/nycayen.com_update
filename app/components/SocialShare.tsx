@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useConversionTracking } from '../lib/conversion-tracking';
 
 interface SocialShareProps {
@@ -18,7 +18,7 @@ interface SocialShareProps {
 interface SharePlatform {
   name: string;
   icon: string;
-  shareUrl: (props: SocialShareProps) => string;
+  shareUrl: (props: SocialShareProps, currentUrl: string, currentTitle: string) => string;
   color: string;
   label: string;
 }
@@ -29,10 +29,10 @@ const platforms: SharePlatform[] = [
     icon: '📘',
     label: 'Facebook',
     color: 'bg-blue-600 hover:bg-blue-700',
-    shareUrl: ({ url, title, description }) => {
+    shareUrl: ({ url, title, description }, currentUrl, currentTitle) => {
       const params = new URLSearchParams({
-        u: url || window.location.href,
-        quote: `${title || document.title}${description ? ` - ${description}` : ''}`,
+        u: url || currentUrl,
+        quote: `${title || currentTitle}${description ? ` - ${description}` : ''}`,
       });
       return `https://www.facebook.com/sharer/sharer.php?${params.toString()}`;
     },
@@ -42,10 +42,10 @@ const platforms: SharePlatform[] = [
     icon: '🐦',
     label: 'Twitter',
     color: 'bg-sky-500 hover:bg-sky-600',
-    shareUrl: ({ url, title, hashtags, via }) => {
+    shareUrl: ({ url, title, hashtags, via }, currentUrl, currentTitle) => {
       const params = new URLSearchParams({
-        url: url || window.location.href,
-        text: title || document.title,
+        url: url || currentUrl,
+        text: title || currentTitle,
         ...(hashtags && { hashtags: hashtags.join(',') }),
         ...(via && { via }),
       });
@@ -57,17 +57,17 @@ const platforms: SharePlatform[] = [
     icon: '📷',
     label: 'Instagram',
     color: 'bg-gradient-to-br from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600',
-    shareUrl: () => 'https://www.instagram.com', // Instagram doesn't have direct URL sharing
+    shareUrl: () => 'https://www.instagram.com',
   },
   {
     name: 'pinterest',
     icon: '📌',
     label: 'Pinterest',
     color: 'bg-red-600 hover:bg-red-700',
-    shareUrl: ({ url, title, description, image }) => {
+    shareUrl: ({ url, title, description, image }, currentUrl, currentTitle) => {
       const params = new URLSearchParams({
-        url: url || window.location.href,
-        description: `${title || document.title}${description ? ` - ${description}` : ''}`,
+        url: url || currentUrl,
+        description: `${title || currentTitle}${description ? ` - ${description}` : ''}`,
         ...(image && { media: image }),
       });
       return `https://pinterest.com/pin/create/button/?${params.toString()}`;
@@ -78,10 +78,10 @@ const platforms: SharePlatform[] = [
     icon: '💼',
     label: 'LinkedIn',
     color: 'bg-blue-700 hover:bg-blue-800',
-    shareUrl: ({ url, title, description }) => {
+    shareUrl: ({ url, title, description }, currentUrl, currentTitle) => {
       const params = new URLSearchParams({
-        url: url || window.location.href,
-        title: title || document.title,
+        url: url || currentUrl,
+        title: title || currentTitle,
         summary: description || '',
       });
       return `https://www.linkedin.com/sharing/share-offsite/?${params.toString()}`;
@@ -92,8 +92,8 @@ const platforms: SharePlatform[] = [
     icon: '💬',
     label: 'WhatsApp',
     color: 'bg-green-500 hover:bg-green-600',
-    shareUrl: ({ url, title }) => {
-      const text = `${title || document.title} ${url || window.location.href}`;
+    shareUrl: ({ url, title }, currentUrl, currentTitle) => {
+      const text = `${title || currentTitle} ${url || currentUrl}`;
       return `https://wa.me/?text=${encodeURIComponent(text)}`;
     },
   },
@@ -102,10 +102,10 @@ const platforms: SharePlatform[] = [
     icon: '✈️',
     label: 'Telegram',
     color: 'bg-blue-500 hover:bg-blue-600',
-    shareUrl: ({ url, title }) => {
+    shareUrl: ({ url, title }, currentUrl, currentTitle) => {
       const params = new URLSearchParams({
-        url: url || window.location.href,
-        text: title || document.title,
+        url: url || currentUrl,
+        text: title || currentTitle,
       });
       return `https://t.me/share/url?${params.toString()}`;
     },
@@ -115,9 +115,9 @@ const platforms: SharePlatform[] = [
     icon: '📧',
     label: 'Email',
     color: 'bg-gray-600 hover:bg-gray-700',
-    shareUrl: ({ url, title, description }) => {
-      const subject = title || document.title;
-      const body = `${description || 'Check out this amazing content!'}\n\n${url || window.location.href}`;
+    shareUrl: ({ url, title, description }, currentUrl, currentTitle) => {
+      const subject = title || currentTitle;
+      const body = `${description || 'Check out this amazing content!'}\n\n${url || currentUrl}`;
       return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     },
   },
@@ -126,7 +126,7 @@ const platforms: SharePlatform[] = [
     icon: '📋',
     label: 'Copy Link',
     color: 'bg-gray-500 hover:bg-gray-600',
-    shareUrl: ({ url }) => url || window.location.href,
+    shareUrl: ({ url }, currentUrl) => url || currentUrl,
   },
 ];
 
@@ -142,10 +142,20 @@ export default function SocialShare({
   showCounts = false,
 }: SocialShareProps) {
   const [copied, setCopied] = useState(false);
-  const [shareCounts, setShareCounts] = useState<Record<string, number>>({});
+  const [currentUrl, setCurrentUrl] = useState('');
+  const [currentTitle, setCurrentTitle] = useState('');
   const { trackSocialShare } = useConversionTracking();
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setCurrentUrl(window.location.href);
+      setCurrentTitle(document.title);
+    }
+  }, []);
+
   const handleShare = async (platform: SharePlatform) => {
+    if (typeof window === 'undefined') return;
+
     const shareData = { url, title, description, image, hashtags, via };
     
     // Track the share event
@@ -153,32 +163,32 @@ export default function SocialShare({
       platform: platform.name,
       content_type: 'page',
       content_id: url || window.location.pathname,
-      url: url || window.location.href,
+      url: url || currentUrl,
     });
 
     if (platform.name === 'copy') {
       try {
-        const urlToCopy = shareData.url || window.location.href;
-        await navigator.clipboard.writeText(urlToCopy);
+        const urlToCopy = shareData.url || currentUrl;
+        if (navigator.clipboard) {
+          await navigator.clipboard.writeText(urlToCopy);
+        } else {
+          // Fallback for older browsers
+          const textArea = document.createElement('textarea');
+          textArea.value = urlToCopy;
+          document.body.appendChild(textArea);
+          textArea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textArea);
+        }
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       } catch (err) {
         console.error('Failed to copy link:', err);
-        // Fallback for older browsers
-        const textArea = document.createElement('textarea');
-        textArea.value = shareData.url || window.location.href;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
       }
       return;
     }
 
     if (platform.name === 'instagram') {
-      // Instagram requires special handling
       alert('To share on Instagram, please take a screenshot and post it to your Instagram story or feed!');
       return;
     }
@@ -187,9 +197,9 @@ export default function SocialShare({
     if (navigator.share && platform.name !== 'copy') {
       try {
         await navigator.share({
-          title: shareData.title || document.title,
+          title: shareData.title || currentTitle,
           text: shareData.description,
-          url: shareData.url || window.location.href,
+          url: shareData.url || currentUrl,
         });
         return;
       } catch (err) {
@@ -198,7 +208,7 @@ export default function SocialShare({
     }
 
     // Traditional sharing via popup
-    const shareUrl = platform.shareUrl(shareData);
+    const shareUrl = platform.shareUrl(shareData, currentUrl, currentTitle);
     const popup = window.open(
       shareUrl,
       `share-${platform.name}`,
@@ -211,7 +221,7 @@ export default function SocialShare({
     }
   };
 
-  // Mock share counts (in a real implementation, you'd fetch these from APIs)
+  // Mock share counts
   const getShareCount = (platform: string): number => {
     const baseCounts: Record<string, number> = {
       facebook: 234,
@@ -258,11 +268,6 @@ export default function SocialShare({
           </button>
         ))}
       </div>
-      
-      {/* Share modal for complex content */}
-      <div className="hidden">
-        {/* This would contain a modal for more advanced sharing options */}
-      </div>
     </div>
   );
 }
@@ -283,9 +288,17 @@ export function BlogPostShare({
   category: string;
   tags: string[];
 }) {
+  const [baseUrl, setBaseUrl] = useState('');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setBaseUrl(window.location.origin);
+    }
+  }, []);
+
   return (
     <SocialShare
-      url={`${window.location.origin}/blog/${slug}`}
+      url={`${baseUrl}/blog/${slug}`}
       title={title}
       description={excerpt}
       image={featuredImage}
@@ -333,8 +346,10 @@ export function BookingShare({
 
 // Analytics integration for share tracking
 export function trackSocialShareEvent(platform: string, contentType: string, contentId: string) {
-  // This integrates with your analytics system
-  if (typeof window !== 'undefined' && window.gtag) {
+  if (typeof window === 'undefined') return;
+
+  // Track with Google Analytics if available
+  if (window.gtag) {
     window.gtag('event', 'share', {
       method: platform,
       content_type: contentType,
@@ -343,19 +358,16 @@ export function trackSocialShareEvent(platform: string, contentType: string, con
   }
 
   // Track custom conversion
-  if (typeof window !== 'undefined') {
-    // Custom analytics tracking
-    fetch('/api/analytics/track', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        event: 'social_share',
-        platform,
-        content_type: contentType,
-        content_id: contentId,
-        timestamp: new Date().toISOString(),
-        url: window.location.href,
-      }),
-    }).catch(console.error);
-  }
+  fetch('/api/analytics/track', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      event: 'social_share',
+      platform,
+      content_type: contentType,
+      content_id: contentId,
+      timestamp: new Date().toISOString(),
+      url: window.location.href,
+    }),
+  }).catch(console.error);
 }

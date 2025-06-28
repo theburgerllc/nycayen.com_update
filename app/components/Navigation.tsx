@@ -18,8 +18,22 @@ export default function Navigation() {
     const handleScroll = () => {
       setScrolled(window.scrollY > 50);
     };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    
+    const throttledHandleScroll = (() => {
+      let ticking = false;
+      return () => {
+        if (!ticking) {
+          requestAnimationFrame(() => {
+            handleScroll();
+            ticking = false;
+          });
+          ticking = true;
+        }
+      };
+    })();
+    
+    window.addEventListener("scroll", throttledHandleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", throttledHandleScroll);
   }, []);
 
   const navLinks = [
@@ -36,7 +50,16 @@ export default function Navigation() {
     setIsOpen(false);
     if (href.startsWith('#')) {
       const element = document.querySelector(href);
-      element?.scrollIntoView({ behavior: "smooth" });
+      if (element) {
+        const headerHeight = 80; // Account for fixed header height
+        const elementPosition = element.getBoundingClientRect().top + window.scrollY;
+        const offsetPosition = elementPosition - headerHeight;
+        
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: "smooth"
+        });
+      }
     }
   };
 

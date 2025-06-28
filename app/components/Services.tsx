@@ -4,7 +4,7 @@ import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { ArrowRight, Star, Clock, Sparkles, CheckCircle, ExternalLink, X } from "lucide-react";
 import Link from "next/link";
 import React, { memo, useMemo, useState, useCallback } from "react";
-import Image from "next/image";
+import OptimizedImage from "./OptimizedImage";
 
 const services = [
   {
@@ -179,12 +179,14 @@ const ServiceModal = memo(function ServiceModal({ service, isOpen, onClose }: Se
             <div className="overflow-y-auto max-h-[90vh]">
               {/* Header with Image */}
               <div className="relative h-64 md:h-80">
-                <Image
+                <OptimizedImage
                   src={service.image}
                   alt={service.title}
                   fill
                   className="object-cover"
                   sizes="(max-width: 768px) 100vw, 50vw"
+                  priority={index === 0} // Prioritize first service image
+                  quality={90}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
                 
@@ -423,12 +425,14 @@ const ServiceCard = memo(function ServiceCard({
       {/* Image */}
       <div className="relative h-48 overflow-hidden">
         <motion.div variants={imageVariants} className="w-full h-full">
-          <Image
+          <OptimizedImage
             src={service.image}
             alt={service.title}
             fill
             className="object-cover"
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            priority={index < 3} // Prioritize first 3 service images
+            quality={85}
           />
         </motion.div>
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />

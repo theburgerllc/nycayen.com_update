@@ -15,6 +15,10 @@ export interface InstagramMedia {
   is_featured?: boolean;
   tags?: string[];
   category?: string;
+  // Additional computed fields
+  short_caption?: string;
+  formatted_date?: string;
+  engagement_score?: number;
 }
 
 export interface InstagramCarouselChild {

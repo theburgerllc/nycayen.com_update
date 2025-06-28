@@ -23,8 +23,8 @@ export async function GET() {
       <description><![CDATA[${post.description}]]></description>
       <link>${baseUrl}${post.url}</link>
       <guid isPermaLink="false">${baseUrl}${post.url}</guid>
-      <pubDate>${post.publishedAt.toUTCString()}</pubDate>
-      <author>noreply@nycayen.com (${post.author.name})</author>
+      <pubDate>${post.publishedAt ? new Date(post.publishedAt).toUTCString() : new Date().toUTCString()}</pubDate>
+      <author>noreply@nycayen.com (${post.author?.name || 'Nycayen Moore'})</author>
       <category>${post.category}</category>
       ${post.tags.map(tag => `<category>${tag}</category>`).join('')}
     </item>`

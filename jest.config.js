@@ -15,7 +15,7 @@ const customJestConfig = {
     '<rootDir>/tests/e2e/',
     '<rootDir>/playwright-tests/',
   ],
-  moduleNameMapping: {
+  moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
     '^@/app/(.*)$': '<rootDir>/app/$1',
     '^@/components/(.*)$': '<rootDir>/app/components/$1',

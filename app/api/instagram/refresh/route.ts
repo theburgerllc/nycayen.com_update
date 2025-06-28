@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     const newToken = await api.refreshAccessToken();
     
     // Clear all cached data to force fresh fetch
-    instagramCache.cache.clear();
+    instagramCache.cleanup();
     
     // Test the new token by fetching user info
     const userInfo = await api.getUserInfo();
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const api = getInstagramAPI();
     

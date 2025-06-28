@@ -1,395 +1,266 @@
+// app/lib/performance.ts
+"use client";
+
+import { getCLS, getFCP, getFID, getLCP, getTTFB } from 'web-vitals';
+
+export interface VitalsMetric {
+  id: string;
+  name: string;
+  value: number;
+  rating: 'good' | 'needs-improvement' | 'poor';
+  delta: number;
+  entries: PerformanceEntry[];
+}
+
 // Performance monitoring and optimization utilities
-
-import { performance } from 'perf_hooks'
-
-// Performance metrics collection
 export class PerformanceMonitor {
-  private static instance: PerformanceMonitor
-  private metrics: Map<string, number[]> = new Map()
-  private startTimes: Map<string, number> = new Map()
+  private static instance: PerformanceMonitor;
+  private metrics: Map<string, VitalsMetric> = new Map();
+  private observers: PerformanceObserver[] = [];
 
-  static getInstance(): PerformanceMonitor {
+  private constructor() {
+    this.initializeWebVitals();
+    this.initializeResourceObserver();
+    this.initializeLongTaskObserver();
+  }
+
+  public static getInstance(): PerformanceMonitor {
     if (!PerformanceMonitor.instance) {
-      PerformanceMonitor.instance = new PerformanceMonitor()
+      PerformanceMonitor.instance = new PerformanceMonitor();
     }
-    return PerformanceMonitor.instance
+    return PerformanceMonitor.instance;
   }
 
-  startTimer(name: string): void {
-    this.startTimes.set(name, performance.now())
+  private initializeWebVitals() {
+    // Core Web Vitals monitoring
+    getCLS(this.onVitalMetric.bind(this), true);
+    getFCP(this.onVitalMetric.bind(this), true);
+    getFID(this.onVitalMetric.bind(this), true);
+    getLCP(this.onVitalMetric.bind(this), true);
+    getTTFB(this.onVitalMetric.bind(this), true);
   }
 
-  endTimer(name: string): number {
-    const startTime = this.startTimes.get(name)
-    if (!startTime) {
-      console.warn(`Timer ${name} was not started`)
-      return 0
+  private onVitalMetric(metric: VitalsMetric) {
+    this.metrics.set(metric.name, metric);
+    
+    // Send to analytics in production
+    if (process.env.NODE_ENV === 'production') {
+      this.sendToAnalytics(metric);
     }
 
-    const duration = performance.now() - startTime
-    this.startTimes.delete(name)
-
-    // Store metric
-    if (!this.metrics.has(name)) {
-      this.metrics.set(name, [])
-    }
-    this.metrics.get(name)?.push(duration)
-
-    return duration
-  }
-
-  getMetrics(name: string): {
-    count: number
-    avg: number
-    min: number
-    max: number
-    p95: number
-    p99: number
-  } | null {
-    const measurements = this.metrics.get(name)
-    if (!measurements || measurements.length === 0) {
-      return null
-    }
-
-    const sorted = [...measurements].sort((a, b) => a - b)
-    const count = sorted.length
-    const sum = sorted.reduce((acc, val) => acc + val, 0)
-
-    return {
-      count,
-      avg: sum / count,
-      min: sorted[0],
-      max: sorted[count - 1],
-      p95: sorted[Math.floor(count * 0.95)],
-      p99: sorted[Math.floor(count * 0.99)],
+    // Log performance issues
+    if (metric.rating === 'poor') {
+      console.warn(`Poor ${metric.name} performance:`, metric.value);
+      this.logPerformanceIssue(metric);
     }
   }
 
-  getAllMetrics(): Record<string, any> {
-    const result: Record<string, any> = {}
-    for (const [name] of this.metrics) {
-      result[name] = this.getMetrics(name)
-    }
-    return result
-  }
-
-  clearMetrics(): void {
-    this.metrics.clear()
-    this.startTimes.clear()
-  }
-}
-
-// Performance decorator
-export function measurePerformance(name?: string) {
-  return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
-    const originalMethod = descriptor.value
-    const timerName = name || `${target.constructor.name}.${propertyKey}`
-
-    descriptor.value = async function (...args: any[]) {
-      const monitor = PerformanceMonitor.getInstance()
-      monitor.startTimer(timerName)
-
-      try {
-        const result = await originalMethod.apply(this, args)
-        const duration = monitor.endTimer(timerName)
-
-        // Log slow operations
-        if (duration > 1000) {
-          console.warn(`Slow operation detected: ${timerName} took ${duration.toFixed(2)}ms`)
-        }
-
-        return result
-      } catch (error) {
-        monitor.endTimer(timerName)
-        throw error
-      }
-    }
-  }
-}
-
-// Bundle size monitoring
-export class BundleAnalyzer {
-  static async getClientBundleSize(): Promise<{
-    total: number
-    gzipped: number
-    chunks: Record<string, number>
-  }> {
-    if (typeof window === 'undefined') {
-      return { total: 0, gzipped: 0, chunks: {} }
-    }
-
-    // This would be populated by webpack-bundle-analyzer in real implementation
-    return {
-      total: 0,
-      gzipped: 0,
-      chunks: {},
-    }
-  }
-
-  static logBundleMetrics(): void {
-    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-      console.log('Bundle analysis would be performed here')
-    }
-  }
-}
-
-// Memory monitoring
-export class MemoryMonitor {
-  static getMemoryUsage(): NodeJS.MemoryUsage | null {
-    if (typeof process === 'undefined') {
-      return null
-    }
-
-    return process.memoryUsage()
-  }
-
-  static formatMemoryUsage(usage: NodeJS.MemoryUsage): string {
-    const formatBytes = (bytes: number) => {
-      return (bytes / 1024 / 1024).toFixed(2) + ' MB'
-    }
-
-    return `RSS: ${formatBytes(usage.rss)}, Heap Used: ${formatBytes(usage.heapUsed)}, Heap Total: ${formatBytes(usage.heapTotal)}, External: ${formatBytes(usage.external)}`
-  }
-
-  static checkMemoryLeaks(): void {
-    const usage = this.getMemoryUsage()
-    if (!usage) return
-
-    const heapUsedMB = usage.heapUsed / 1024 / 1024
-
-    // Alert if heap usage is over 500MB
-    if (heapUsedMB > 500) {
-      console.warn(`High memory usage detected: ${this.formatMemoryUsage(usage)}`)
-    }
-  }
-
-  static scheduleMemoryMonitoring(): void {
-    if (typeof process !== 'undefined') {
-      setInterval(() => {
-        this.checkMemoryLeaks()
-      }, 60000) // Check every minute
-    }
-  }
-}
-
-// Core Web Vitals monitoring
-export class WebVitalsMonitor {
-  static measureCLS(): void {
-    if (typeof window === 'undefined') return
-
-    let clsValue = 0
-    let clsEntries: LayoutShift[] = []
-
-    const observer = new PerformanceObserver((list) => {
-      for (const entry of list.getEntries() as LayoutShift[]) {
-        if (!entry.hadRecentInput) {
-          clsEntries.push(entry)
-          clsValue += entry.value
-        }
-      }
-    })
-
-    observer.observe({ type: 'layout-shift', buffered: true })
-
-    // Report CLS after page load
-    window.addEventListener('beforeunload', () => {
-      console.log('CLS:', clsValue)
-      // Send to analytics
-    })
-  }
-
-  static measureLCP(): void {
-    if (typeof window === 'undefined') return
-
-    const observer = new PerformanceObserver((list) => {
-      const entries = list.getEntries()
-      const lastEntry = entries[entries.length - 1] as PerformanceEntry
-
-      console.log('LCP:', lastEntry.startTime)
-      // Send to analytics
-    })
-
-    observer.observe({ type: 'largest-contentful-paint', buffered: true })
-  }
-
-  static measureFID(): void {
-    if (typeof window === 'undefined') return
-
-    const observer = new PerformanceObserver((list) => {
-      for (const entry of list.getEntries()) {
-        console.log('FID:', entry.processingStart - entry.startTime)
-        // Send to analytics
-      }
-    })
-
-    observer.observe({ type: 'first-input', buffered: true })
-  }
-
-  static initWebVitals(): void {
-    this.measureCLS()
-    this.measureLCP()
-    this.measureFID()
-  }
-}
-
-// Resource loading optimization
-export class ResourceOptimizer {
-  static preloadCriticalResources(): void {
-    if (typeof document === 'undefined') return
-
-    const criticalResources = [
-      { href: '/fonts/inter.woff2', as: 'font', type: 'font/woff2' },
-      { href: '/images/hero-bg.jpg', as: 'image' },
-    ]
-
-    criticalResources.forEach(resource => {
-      const link = document.createElement('link')
-      link.rel = 'preload'
-      link.href = resource.href
-      link.as = resource.as
-      if (resource.type) {
-        link.type = resource.type
-      }
-      if (resource.as === 'font') {
-        link.crossOrigin = 'anonymous'
-      }
-      document.head.appendChild(link)
-    })
-  }
-
-  static prefetchNextPageResources(nextPath: string): void {
-    if (typeof document === 'undefined') return
-
-    const link = document.createElement('link')
-    link.rel = 'prefetch'
-    link.href = nextPath
-    document.head.appendChild(link)
-  }
-
-  static lazyLoadImages(): void {
-    if (typeof window === 'undefined') return
-
-    const images = document.querySelectorAll('img[data-src]')
-    const imageObserver = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          const img = entry.target as HTMLImageElement
-          img.src = img.dataset.src!
-          img.removeAttribute('data-src')
-          imageObserver.unobserve(img)
-        }
-      })
-    })
-
-    images.forEach(img => imageObserver.observe(img))
-  }
-}
-
-// API response time monitoring
-export function withResponseTimeLogging(handler: Function) {
-  return async function (req: any, res: any, ...args: any[]) {
-    const start = Date.now()
-    const originalSend = res.send
-
-    res.send = function (body: any) {
-      const duration = Date.now() - start
-      
-      // Log slow API responses
-      if (duration > 500) {
-        console.warn(`Slow API response: ${req.method} ${req.url} took ${duration}ms`)
-      }
-
-      // Add performance headers
-      res.setHeader('X-Response-Time', `${duration}ms`)
-      res.setHeader('X-Timestamp', new Date().toISOString())
-
-      return originalSend.call(this, body)
-    }
-
-    return handler(req, res, ...args)
-  }
-}
-
-// Database query performance monitoring
-export function withQueryLogging<T extends any[], R>(
-  queryFn: (...args: T) => Promise<R>,
-  queryName: string
-) {
-  return async (...args: T): Promise<R> => {
-    const monitor = PerformanceMonitor.getInstance()
-    monitor.startTimer(`db.${queryName}`)
+  private initializeResourceObserver() {
+    if (typeof window === 'undefined' || !('PerformanceObserver' in window)) return;
 
     try {
-      const result = await queryFn(...args)
-      const duration = monitor.endTimer(`db.${queryName}`)
+      const observer = new PerformanceObserver((list) => {
+        list.getEntries().forEach((entry) => {
+          if (entry.entryType === 'resource') {
+            this.analyzeResourceTiming(entry as PerformanceResourceTiming);
+          }
+        });
+      });
 
-      if (duration > 1000) {
-        console.warn(`Slow database query: ${queryName} took ${duration.toFixed(2)}ms`)
-      }
-
-      return result
+      observer.observe({ entryTypes: ['resource'] });
+      this.observers.push(observer);
     } catch (error) {
-      monitor.endTimer(`db.${queryName}`)
-      throw error
+      console.error('Failed to initialize resource observer:', error);
     }
+  }
+
+  private initializeLongTaskObserver() {
+    if (typeof window === 'undefined' || !('PerformanceObserver' in window)) return;
+
+    try {
+      const observer = new PerformanceObserver((list) => {
+        list.getEntries().forEach((entry) => {
+          if (entry.duration > 50) { // Tasks longer than 50ms
+            console.warn('Long task detected:', {
+              duration: entry.duration,
+              startTime: entry.startTime,
+              name: entry.name
+            });
+          }
+        });
+      });
+
+      observer.observe({ entryTypes: ['longtask'] });
+      this.observers.push(observer);
+    } catch (error) {
+      console.error('Failed to initialize long task observer:', error);
+    }
+  }
+
+  private analyzeResourceTiming(entry: PerformanceResourceTiming) {
+    const { name, duration, transferSize, encodedBodySize } = entry;
+
+    // Flag slow resources
+    if (duration > 1000) {
+      console.warn('Slow resource detected:', {
+        url: name,
+        duration: Math.round(duration),
+        size: transferSize
+      });
+    }
+
+    // Flag large resources
+    if (transferSize > 500000) { // 500KB
+      console.warn('Large resource detected:', {
+        url: name,
+        transferSize: Math.round(transferSize / 1024) + 'KB',
+        encodedSize: Math.round(encodedBodySize / 1024) + 'KB'
+      });
+    }
+  }
+
+  private sendToAnalytics(metric: VitalsMetric) {
+    // Send to Google Analytics 4
+    if (typeof window !== 'undefined' && (window as any).gtag) {
+      (window as any).gtag('event', metric.name, {
+        event_category: 'Web Vitals',
+        event_label: metric.id,
+        value: Math.round(metric.name === 'CLS' ? metric.value * 1000 : metric.value),
+        custom_map: {
+          metric_rating: metric.rating,
+          metric_delta: metric.delta
+        }
+      });
+    }
+
+    // Send to Vercel Analytics
+    if (typeof window !== 'undefined' && (window as any).va) {
+      (window as any).va('track', 'web-vital', {
+        name: metric.name,
+        value: metric.value,
+        rating: metric.rating,
+        id: metric.id
+      });
+    }
+  }
+
+  private logPerformanceIssue(metric: VitalsMetric) {
+    const issue = {
+      metric: metric.name,
+      value: metric.value,
+      rating: metric.rating,
+      timestamp: Date.now(),
+      url: window.location.href,
+      userAgent: navigator.userAgent,
+      connection: (navigator as any).connection ? {
+        effectiveType: (navigator as any).connection.effectiveType,
+        downlink: (navigator as any).connection.downlink,
+        rtt: (navigator as any).connection.rtt
+      } : null
+    };
+
+    // Store in session storage for debugging
+    const issues = JSON.parse(sessionStorage.getItem('performance-issues') || '[]');
+    issues.push(issue);
+    sessionStorage.setItem('performance-issues', JSON.stringify(issues.slice(-10))); // Keep last 10
+  }
+
+  public getMetrics(): Map<string, VitalsMetric> {
+    return this.metrics;
+  }
+
+  public getMetric(name: string): VitalsMetric | undefined {
+    return this.metrics.get(name);
+  }
+
+  public isPerformanceGood(): boolean {
+    const criticalMetrics = ['LCP', 'FID', 'CLS'];
+    return criticalMetrics.every(metric => {
+      const vitalsMetric = this.metrics.get(metric);
+      return !vitalsMetric || vitalsMetric.rating !== 'poor';
+    });
+  }
+
+  public disconnect() {
+    this.observers.forEach(observer => observer.disconnect());
+    this.observers = [];
   }
 }
 
-// Performance budget monitoring
-export class PerformanceBudget {
-  private static budgets = {
-    'page-load': 3000, // 3 seconds
-    'api-response': 500, // 500ms
-    'database-query': 100, // 100ms
-    'bundle-size': 500 * 1024, // 500KB
+// Resource hints utilities
+export class ResourceOptimizer {
+  private static preloadedResources = new Set<string>();
+
+  public static preloadResource(href: string, as: string, type?: string) {
+    if (typeof document === 'undefined' || this.preloadedResources.has(href)) return;
+
+    const link = document.createElement('link');
+    link.rel = 'preload';
+    link.href = href;
+    link.as = as;
+    if (type) link.type = type;
+    
+    document.head.appendChild(link);
+    this.preloadedResources.add(href);
   }
 
-  static checkBudget(metric: string, value: number): boolean {
-    const budget = this.budgets[metric as keyof typeof this.budgets]
-    if (!budget) return true
+  public static prefetchResource(href: string) {
+    if (typeof document === 'undefined' || this.preloadedResources.has(href)) return;
 
-    const exceeded = value > budget
-    if (exceeded) {
-      console.warn(`Performance budget exceeded: ${metric} = ${value}, budget = ${budget}`)
-    }
-
-    return !exceeded
+    const link = document.createElement('link');
+    link.rel = 'prefetch';
+    link.href = href;
+    
+    document.head.appendChild(link);
+    this.preloadedResources.add(href);
   }
 
-  static setBudget(metric: string, value: number): void {
-    (this.budgets as any)[metric] = value
+  public static preconnectToDomain(href: string, crossorigin = false) {
+    if (typeof document === 'undefined') return;
+
+    const link = document.createElement('link');
+    link.rel = 'preconnect';
+    link.href = href;
+    if (crossorigin) link.crossOrigin = 'anonymous';
+    
+    document.head.appendChild(link);
   }
 
-  static getBudgets(): typeof PerformanceBudget.budgets {
-    return this.budgets
+  public static initializeCriticalResourceHints() {
+    // Preconnect to external domains
+    this.preconnectToDomain('https://fonts.googleapis.com');
+    this.preconnectToDomain('https://fonts.gstatic.com', true);
+    this.preconnectToDomain('https://www.google-analytics.com');
+    this.preconnectToDomain('https://vitals.vercel-analytics.com');
+
+    // Preload critical fonts
+    this.preloadResource(
+      'https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap',
+      'style'
+    );
   }
 }
-
-// Export singleton instances
-export const performanceMonitor = PerformanceMonitor.getInstance()
 
 // Initialize performance monitoring
-export function initPerformanceMonitoring(): void {
-  if (typeof window !== 'undefined') {
-    WebVitalsMonitor.initWebVitals()
-    ResourceOptimizer.preloadCriticalResources()
-    ResourceOptimizer.lazyLoadImages()
-  }
+export function initializePerformanceMonitoring() {
+  if (typeof window === 'undefined') return;
 
-  if (typeof process !== 'undefined') {
-    MemoryMonitor.scheduleMemoryMonitoring()
+  // Initialize all performance utilities
+  PerformanceMonitor.getInstance();
+  ResourceOptimizer.initializeCriticalResourceHints();
+
+  // Initialize on page load
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        ResourceOptimizer.initializeCriticalResourceHints();
+      }, 100);
+    });
+  } else {
+    setTimeout(() => {
+      ResourceOptimizer.initializeCriticalResourceHints();
+    }, 100);
   }
 }
 
-export default {
-  PerformanceMonitor,
-  BundleAnalyzer,
-  MemoryMonitor,
-  WebVitalsMonitor,
-  ResourceOptimizer,
-  PerformanceBudget,
-  measurePerformance,
-  withResponseTimeLogging,
-  withQueryLogging,
-  initPerformanceMonitoring,
-}
+export default PerformanceMonitor;

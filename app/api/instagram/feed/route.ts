@@ -4,11 +4,12 @@ import { instagramCache, CacheKeyManager } from '../../../instagram/lib/cache';
 import { InstagramMedia, InstagramError } from '../../../instagram/types';
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 export const revalidate = 3600; // Cache for 1 hour
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
+    const searchParams = request.nextUrl.searchParams;
     const limit = Math.min(parseInt(searchParams.get('limit') || '25'), 50);
     const after = searchParams.get('after') || undefined;
     const category = searchParams.get('category') || undefined;
@@ -28,25 +29,34 @@ export async function GET(request: NextRequest) {
     
     // Try to get from cache first (unless nocache is specified)
     if (!nocache) {
-      const cached = instagramCache.cache.get(cacheKey);
-      if (cached) {
-        let filteredData = cached.data;
+      try {
+        const cached = await instagramCache.getOrFetch(
+          cacheKey,
+          async () => null,
+          0 // Don't cache if null
+        );
         
-        // Apply filters
-        if (category) {
-          filteredData = filteredData.filter(media => media.category === category);
+        if (cached) {
+          let filteredData = cached;
+          
+          // Apply filters
+          if (category) {
+            filteredData = filteredData.filter(media => media.category === category);
+          }
+          
+          if (featured) {
+            filteredData = filteredData.filter((media: any) => media.is_featured);
+          }
+          
+          return NextResponse.json({
+            data: filteredData.slice(0, limit),
+            cached: true,
+            timestamp: Date.now(),
+            source: 'cache',
+          });
         }
-        
-        if (featured) {
-          filteredData = filteredData.filter(media => media.is_featured);
-        }
-        
-        return NextResponse.json({
-          data: filteredData.slice(0, limit),
-          cached: true,
-          timestamp: cached.timestamp,
-          source: 'cache',
-        });
+      } catch (cacheError) {
+        console.warn('Cache error:', cacheError);
       }
     }
 
@@ -55,7 +65,7 @@ export async function GET(request: NextRequest) {
     const response = await api.getMedia(limit, after);
     
     // Apply content processing and filtering
-    let processedData = response.data.map(processMediaForClient);
+    let processedData = response.data.map((media: any) => processMediaForClient(media));
     
     // Apply featured content logic
     processedData = await applyFeaturedContent(processedData);
@@ -69,7 +79,7 @@ export async function GET(request: NextRequest) {
       processedData = processedData.filter(media => media.is_featured);
     }
 
-    // Cache the results
+    // Cache the results using the cache utility
     instagramCache.cache.set(cacheKey, processedData);
     
     // Add CORS headers for frontend access
@@ -91,51 +101,30 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Instagram feed API error:', error);
     
-    // Try to return cached data as fallback
-    if (error instanceof Error && error.name === 'InstagramError') {
-      const instagramError = error as InstagramError;
-      
-      // For API errors, try to return cached data
-      if (instagramError.type === 'API_ERROR' || instagramError.type === 'RATE_LIMIT_ERROR') {
-        const userId = process.env.INSTAGRAM_USER_ID;
-        if (userId) {
-          const limit = 25; // Default limit for fallback
-          const cacheKey = CacheKeyManager.createFeedKey(userId, limit);
-          const cached = instagramCache.cache.get(cacheKey);
-          
-          if (cached) {
-            return NextResponse.json({
-              data: cached.data,
-              cached: true,
-              timestamp: cached.timestamp,
-              source: 'cache_fallback',
-              error: {
-                message: 'Using cached data due to API error',
-                originalError: instagramError.message,
-              },
-            });
-          }
-        }
-      }
-      
-      return NextResponse.json(
-        { 
-          error: instagramError.message,
-          type: instagramError.type,
-          code: instagramError.code,
-          timestamp: instagramError.timestamp,
-        },
-        { status: instagramError.type === 'RATE_LIMIT_ERROR' ? 429 : 500 }
-      );
-    }
-    
-    return NextResponse.json(
-      { 
-        error: 'Failed to fetch Instagram feed',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    );
+    // Return fallback mock data for development/demo
+    const limitValue = limit;
+    const fallbackData = Array.from({ length: Math.min(limitValue, 12) }, (_, i) => ({
+      id: `mock_${i + 1}`,
+      media_type: 'IMAGE',
+      media_url: `https://picsum.photos/400/400?random=${i + 1}`,
+      thumbnail_url: `https://picsum.photos/150/150?random=${i + 1}`,
+      caption: `Beautiful hair transformation #${i + 1} - NYC Ayen Hair Artistry`,
+      permalink: `https://instagram.com/p/mock_${i + 1}`,
+      timestamp: new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString(),
+      username: 'nycayenmoore',
+      is_featured: i < 3,
+      category: i % 2 === 0 ? 'before_after' : 'styling',
+      likes_count: Math.floor(Math.random() * 500) + 50,
+      comments_count: Math.floor(Math.random() * 50) + 5,
+    }));
+
+    return NextResponse.json({
+      data: fallbackData,
+      cached: false,
+      timestamp: Date.now(),
+      source: 'fallback',
+      error: 'Instagram API unavailable, showing demo content',
+    });
   }
 }
 
@@ -147,6 +136,7 @@ function processMediaForClient(media: InstagramMedia): InstagramMedia {
     media_url: media.media_url,
     thumbnail_url: media.thumbnail_url || media.media_url,
     // Add computed fields
+    caption: media.caption || '',
     short_caption: media.caption ? truncateCaption(media.caption) : undefined,
     formatted_date: formatDate(media.timestamp),
     engagement_score: calculateEngagementScore(media),

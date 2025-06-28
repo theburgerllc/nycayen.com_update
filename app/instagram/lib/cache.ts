@@ -282,7 +282,11 @@ export class CacheStrategy {
   private defaultTTL: number;
 
   constructor(strategy: 'memory' | 'localStorage' | 'hybrid' = 'hybrid', defaultTTL: number = 3600) {
-    switch (strategy) {
+    // Force memory-only cache on server-side to avoid client-side dependencies
+    const isServer = typeof window === 'undefined';
+    const resolvedStrategy = isServer ? 'memory' : strategy;
+    
+    switch (resolvedStrategy) {
       case 'memory':
         this.cache = new MemoryCache();
         break;
@@ -396,12 +400,14 @@ export const cacheUtils = {
     instagramCache.invalidatePattern(`*${userId}*`);
   },
 
-  // Schedule periodic cleanup
+  // Schedule periodic cleanup (only call from client-side components)
   scheduleCleanup: (intervalMinutes: number = 60) => {
-    if (typeof window !== 'undefined') {
-      setInterval(() => {
+    // Only schedule cleanup if we're in a browser environment
+    if (typeof window !== 'undefined' && typeof setInterval !== 'undefined') {
+      return setInterval(() => {
         instagramCache.cleanup();
       }, intervalMinutes * 60 * 1000);
     }
+    return null;
   },
 };

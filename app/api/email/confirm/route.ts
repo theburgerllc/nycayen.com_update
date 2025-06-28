@@ -11,8 +11,8 @@ export async function POST(request: NextRequest) {
     // Verify and update subscriber status in database
     const result = await confirmSubscription(token);
 
-    if (!result.success) {
-      return NextResponse.json({ error: result.error }, { status: 400 });
+    if (!result.success || !result.subscriber) {
+      return NextResponse.json({ error: result.error || 'Invalid subscription result' }, { status: 400 });
     }
 
     // Update in email service providers

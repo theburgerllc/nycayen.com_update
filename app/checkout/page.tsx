@@ -7,6 +7,9 @@ import { useShop } from '../shop/context/ShopContext';
 import { CheckoutFlow } from './components/CheckoutFlow';
 import { redirect } from 'next/navigation';
 
+// Force dynamic rendering for this page
+export const dynamic = 'force-dynamic';
+
 export default function CheckoutPage() {
   const { cart, cartCount } = useShop();
 

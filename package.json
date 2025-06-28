@@ -30,7 +30,9 @@
     "lint:staged": "lint-staged",
     "validate-package": "npx npm-package-json-lint .",
     "prepare": "husky install",
-    "pre-commit": "npm run lint && npm run type-check && npm run test:ci"
+    "pre-commit": "npm run lint && npm run type-check && npm run test:ci",
+    "deploy:check": "node scripts/deploy-check.js",
+    "deploy:vercel": "npm run deploy:check && vercel"
   },
   "dependencies": {
     "@formspree/react": "^2.5.5",

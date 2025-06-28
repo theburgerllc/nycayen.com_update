@@ -5,6 +5,8 @@ import WebVitalsReporter from "./components/WebVitalsReporter";
 import type { Metadata } from 'next';
 import { Playfair_Display, Inter } from 'next/font/google';
 import { AnalyticsProvider } from './components/AnalyticsProvider';
+import { ShopProvider } from './shop/context/ShopContext';
+import { initializePerformanceMonitoring } from './lib/performance';
 
 // Optimize font loading
 const playfair = Playfair_Display({
@@ -152,9 +154,11 @@ export default function RootLayout({
       </head>
       <body className={`bg-bg font-inter text-white antialiased ${inter.className}`}>
         <AnalyticsProvider>
-          <WebVitalsReporter debug={process.env.NODE_ENV === 'development'} />
-          <Navigation />
-          {children}
+          <ShopProvider>
+            <WebVitalsReporter debug={process.env.NODE_ENV === 'development'} />
+            <Navigation />
+            {children}
+          </ShopProvider>
         </AnalyticsProvider>
         {/* Google Tag Manager */}
         <Script
@@ -252,6 +256,17 @@ export default function RootLayout({
                   .then(registration => console.log('SW registered'))
                   .catch(error => console.log('SW registration failed'));
               });
+            }
+          `}
+        </Script>
+        
+        {/* Performance Monitoring */}
+        <Script id="performance-init" strategy="afterInteractive">
+          {`
+            // Initialize performance monitoring after DOM content loaded
+            if (typeof window !== 'undefined') {
+              ${initializePerformanceMonitoring.toString()}
+              initializePerformanceMonitoring();
             }
           `}
         </Script>

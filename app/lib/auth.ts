@@ -321,6 +321,15 @@ export class JWTManager {
   }
 
   private static async sign(data: string): Promise<string> {
+    // Use Node.js crypto for server-side compatibility
+    if (typeof window === 'undefined') {
+      const { createHmac } = require('crypto');
+      return createHmac('sha256', AUTH_CONFIG.JWT.SECRET_KEY)
+        .update(data)
+        .digest('base64url');
+    }
+    
+    // Fallback to Web Crypto API for client-side
     const key = await crypto.subtle.importKey(
       'raw',
       new TextEncoder().encode(AUTH_CONFIG.JWT.SECRET_KEY),

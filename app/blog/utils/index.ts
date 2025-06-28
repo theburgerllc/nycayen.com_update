@@ -1,17 +1,4 @@
-import { getAllBlogPosts, getBlogPostBySlug } from '../lib/mdx';
-import Fuse from 'fuse.js';
-import { 
-  BlogPost, 
-  BlogCategory, 
-  BlogTag, 
-  BlogSearchResult, 
-  BlogFilterOptions, 
-  BlogSortOptions, 
-  PaginationOptions, 
-  BlogListResponse,
-  SocialShareOptions,
-  AnalyticsEvent
-} from '../types';
+import { getAllBlogPosts, getBlogPostBySlug, BlogPost } from '../lib/mdx';
 
 export function getAllPosts(): BlogPost[] {
   return getAllBlogPosts();
@@ -38,39 +25,87 @@ export function getRelatedPosts(currentPost: BlogPost, limit: number = 3): BlogP
   return relatedPosts.slice(0, limit);
 }
 
-export function getAllCategories(): BlogCategory[] {
-  const posts = getAllPosts();
-  const categoryMap = new Map<string, number>();
-  
-  posts.forEach(post => {
-    const count = categoryMap.get(post.category) || 0;
-    categoryMap.set(post.category, count + 1);
-  });
-  
-  return Array.from(categoryMap.entries()).map(([name, count]) => ({
-    slug: slugify(name),
-    name,
-    description: `${count} posts in ${name}`,
-    count,
-  }));
+export function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .trim();
 }
 
-export function getAllTags(): BlogTag[] {
+// Define default categories
+export const DEFAULT_CATEGORIES = [
+  {
+    slug: 'hair-care',
+    name: 'Hair Care',
+    description: 'Essential tips and techniques for maintaining healthy, beautiful hair',
+    count: 0,
+  },
+  {
+    slug: 'styling-tips',
+    name: 'Styling Tips',
+    description: 'Professional styling techniques and everyday hair tips',
+    count: 0,
+  },
+  {
+    slug: 'trends',
+    name: 'Trends',
+    description: 'Latest hair trends and seasonal style inspirations',
+    count: 0,
+  },
+  {
+    slug: 'tutorials',
+    name: 'Tutorials',
+    description: 'Step-by-step guides for achieving salon-quality results at home',
+    count: 0,
+  },
+  {
+    slug: 'wigs',
+    name: 'Wig Design',
+    description: 'Custom wig design, styling, and maintenance guides',
+    count: 0,
+  },
+];
+
+export function getAllCategories() {
   const posts = getAllPosts();
-  const tagMap = new Map<string, number>();
+  const categoryMap = new Map();
   
-  posts.forEach(post => {
-    post.tags.forEach(tag => {
-      const count = tagMap.get(tag) || 0;
-      tagMap.set(tag, count + 1);
-    });
+  // Initialize with default categories
+  DEFAULT_CATEGORIES.forEach(cat => {
+    categoryMap.set(cat.slug, { ...cat, count: 0 });
   });
   
-  return Array.from(tagMap.entries()).map(([name, count]) => ({
-    slug: slugify(name),
-    name,
-    count,
-  }));
+  // Count posts for each category
+  posts.forEach(post => {
+    const categorySlug = slugify(post.category);
+    if (categoryMap.has(categorySlug)) {
+      const category = categoryMap.get(categorySlug);
+      category.count++;
+    } else {
+      // Add unknown categories
+      categoryMap.set(categorySlug, {
+        slug: categorySlug,
+        name: post.category,
+        description: `Posts about ${post.category.toLowerCase()}`,
+        count: 1,
+      });
+    }
+  });
+  
+  return Array.from(categoryMap.values());
+}
+
+export function getCategoryBySlug(slug: string) {
+  const categories = getAllCategories();
+  return categories.find(cat => cat.slug === slug) || null;
+}
+
+export function getAllTags() {
+  const posts = getAllPosts();
+  const tags = posts.flatMap(post => post.tags);
+  return Array.from(new Set(tags));
 }
 
 export function getPostsByCategory(category: string): BlogPost[] {
@@ -85,42 +120,85 @@ export function getPostsByTag(tag: string): BlogPost[] {
   );
 }
 
-export function searchPosts(query: string, options?: { threshold?: number }): BlogSearchResult[] {
-  const posts = getAllPosts();
-  const fuse = new Fuse(posts, {
-    keys: [
-      { name: 'title', weight: 3 },
-      { name: 'description', weight: 2 },
-      { name: 'content', weight: 1 },
-      { name: 'tags', weight: 2 },
-      { name: 'category', weight: 1.5 },
-    ],
-    threshold: options?.threshold || 0.3,
-    includeMatches: true,
-    includeScore: true,
-  });
-  
-  const results = fuse.search(query);
-  
-  return results.map(result => ({
-    post: result.item,
-    score: 1 - (result.score || 0),
-    matches: result.matches?.reduce((acc, match) => {
-      const key = match.key as keyof BlogSearchResult['matches'];
-      if (key && match.indices) {
-        acc[key] = match.indices.map(([start, end]) => 
-          match.value?.slice(start, end + 1) || ''
-        );
-      }
-      return acc;
-    }, {} as BlogSearchResult['matches']) || {},
-  }));
+export function formatDate(date: Date | string, format: 'short' | 'long' | 'iso' = 'long'): string {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  switch (format) {
+    case 'short':
+      return dateObj.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      });
+    case 'long':
+      return dateObj.toLocaleDateString('en-US', {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+      });
+    case 'iso':
+      return dateObj.toISOString();
+    default:
+      return dateObj.toLocaleDateString();
+  }
 }
 
-export function filterPosts(
-  posts: BlogPost[], 
-  filters: BlogFilterOptions
-): BlogPost[] {
+export function searchPosts(query: string): BlogPost[] {
+  const posts = getAllPosts();
+  const lowercaseQuery = query.toLowerCase();
+  
+  return posts.filter(post => 
+    post.title.toLowerCase().includes(lowercaseQuery) ||
+    post.description.toLowerCase().includes(lowercaseQuery) ||
+    post.tags.some(tag => tag.toLowerCase().includes(lowercaseQuery)) ||
+    post.category.toLowerCase().includes(lowercaseQuery)
+  );
+}
+
+export function sortPosts(posts: BlogPost[], field: string = 'date', direction: 'asc' | 'desc' = 'desc'): BlogPost[] {
+  return [...posts].sort((a, b) => {
+    let aValue: any;
+    let bValue: any;
+    
+    switch (field) {
+      case 'date':
+        aValue = new Date(a.date).getTime();
+        bValue = new Date(b.date).getTime();
+        break;
+      case 'title':
+        aValue = a.title.toLowerCase();
+        bValue = b.title.toLowerCase();
+        break;
+      default:
+        return 0;
+    }
+    
+    if (direction === 'asc') {
+      return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+    } else {
+      return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
+    }
+  });
+}
+
+export function paginatePosts(posts: BlogPost[], page: number = 1, limit: number = 10) {
+  const totalCount = posts.length;
+  const totalPages = Math.ceil(totalCount / limit);
+  const startIndex = (page - 1) * limit;
+  const endIndex = startIndex + limit;
+  const paginatedPosts = posts.slice(startIndex, endIndex);
+  
+  return {
+    posts: paginatedPosts,
+    totalCount,
+    totalPages,
+    currentPage: page,
+    hasNextPage: page < totalPages,
+    hasPreviousPage: page > 1,
+  };
+}
+
+export function filterPosts(posts: BlogPost[], filters: any): BlogPost[] {
   let filteredPosts = [...posts];
   
   if (filters.category) {
@@ -131,15 +209,9 @@ export function filterPosts(
   
   if (filters.tags && filters.tags.length > 0) {
     filteredPosts = filteredPosts.filter(post =>
-      filters.tags!.some(tag => 
+      filters.tags.some((tag: string) => 
         post.tags.some(postTag => slugify(postTag) === tag)
       )
-    );
-  }
-  
-  if (filters.author) {
-    filteredPosts = filteredPosts.filter(post =>
-      slugify(post.author.name) === filters.author
     );
   }
   
@@ -147,151 +219,22 @@ export function filterPosts(
     filteredPosts = filteredPosts.filter(post => post.featured === filters.featured);
   }
   
-  if (filters.dateRange) {
-    filteredPosts = filteredPosts.filter(post => {
-      const postDate = new Date(post.publishedAt);
-      return postDate >= filters.dateRange!.start && postDate <= filters.dateRange!.end;
-    });
-  }
-  
   return filteredPosts;
 }
 
-export function sortPosts(posts: BlogPost[], sort: BlogSortOptions): BlogPost[] {
-  const sortedPosts = [...posts];
-  
-  sortedPosts.sort((a, b) => {
-    let aValue: any;
-    let bValue: any;
-    
-    switch (sort.field) {
-      case 'publishedAt':
-        aValue = new Date(a.publishedAt).getTime();
-        bValue = new Date(b.publishedAt).getTime();
-        break;
-      case 'title':
-        aValue = a.title.toLowerCase();
-        bValue = b.title.toLowerCase();
-        break;
-      case 'readingTime':
-        aValue = a.readingTime;
-        bValue = b.readingTime;
-        break;
-      case 'popularity':
-        aValue = 0;
-        bValue = 0;
-        break;
-      default:
-        return 0;
-    }
-    
-    if (sort.direction === 'asc') {
-      return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
-    } else {
-      return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
-    }
-  });
-  
-  return sortedPosts;
-}
-
-export function paginatePosts(
-  posts: BlogPost[], 
-  pagination: PaginationOptions
-): BlogListResponse {
-  const totalCount = posts.length;
-  const totalPages = Math.ceil(totalCount / pagination.limit);
-  const startIndex = (pagination.page - 1) * pagination.limit;
-  const endIndex = startIndex + pagination.limit;
-  const paginatedPosts = posts.slice(startIndex, endIndex);
-  
-  return {
-    posts: paginatedPosts,
-    totalCount,
-    totalPages,
-    currentPage: pagination.page,
-    hasNextPage: pagination.page < totalPages,
-    hasPreviousPage: pagination.page > 1,
-  };
-}
-
-export function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-    .trim();
-}
-
-export function formatDate(date: Date, format: 'short' | 'long' | 'iso' = 'long'): string {
-  switch (format) {
-    case 'short':
-      return date.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-      });
-    case 'long':
-      return date.toLocaleDateString('en-US', {
-        weekday: 'long',
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric',
-      });
-    case 'iso':
-      return date.toISOString();
-    default:
-      return date.toLocaleDateString();
-  }
-}
-
-export function truncateText(text: string, maxLength: number, suffix: string = '...'): string {
-  if (text.length <= maxLength) return text;
-  return text.slice(0, maxLength - suffix.length).trim() + suffix;
-}
-
-export function generateExcerpt(content: string, maxLength: number = 160): string {
-  const cleanContent = content
-    .replace(/```[\s\S]*?```/g, '')
-    .replace(/`[^`]*`/g, '')
-    .replace(/#{1,6}\s+/g, '')
-    .replace(/\*\*(.*?)\*\*/g, '$1')
-    .replace(/\*(.*?)\*/g, '$1')
-    .replace(/\[(.*?)\]\(.*?\)/g, '$1')
-    .replace(/\n+/g, ' ')
-    .trim();
-  
-  return truncateText(cleanContent, maxLength);
-}
-
-export function getSocialShareUrl(platform: string, options: SocialShareOptions): string {
+export function getSocialShareUrl(platform: string, options: { url: string; title: string; description: string }): string {
   const encodedUrl = encodeURIComponent(options.url);
   const encodedTitle = encodeURIComponent(options.title);
   const encodedDescription = encodeURIComponent(options.description);
   
-  const baseUrls = {
+  const baseUrls: Record<string, string> = {
     twitter: `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}`,
     facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
     linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`,
     pinterest: `https://pinterest.com/pin/create/button/?url=${encodedUrl}&description=${encodedDescription}`,
-    reddit: `https://reddit.com/submit?url=${encodedUrl}&title=${encodedTitle}`,
-    whatsapp: `https://wa.me/?text=${encodedTitle}%20${encodedUrl}`,
-    telegram: `https://t.me/share/url?url=${encodedUrl}&text=${encodedTitle}`,
   };
   
-  return baseUrls[platform as keyof typeof baseUrls] || '';
-}
-
-export function trackAnalyticsEvent(event: AnalyticsEvent): void {
-  if (typeof window !== 'undefined' && (window as any).gtag) {
-    (window as any).gtag('event', event.action, {
-      event_category: event.category,
-      event_label: event.label,
-      value: event.value,
-      ...event.customParameters,
-    });
-  }
+  return baseUrls[platform] || '';
 }
 
 export function generateStructuredData(post: BlogPost, siteUrl: string) {
@@ -300,14 +243,12 @@ export function generateStructuredData(post: BlogPost, siteUrl: string) {
     '@type': 'Article',
     headline: post.title,
     description: post.description,
-    image: `${siteUrl}${post.coverImage.src}`,
-    datePublished: post.publishedAt.toISOString(),
-    dateModified: (post.updatedAt || post.publishedAt).toISOString(),
+    image: post.author.image,
+    datePublished: post.date,
+    dateModified: post.date,
     author: {
       '@type': 'Person',
       name: post.author.name,
-      ...(post.author.bio && { description: post.author.bio }),
-      ...(post.author.avatar && { image: post.author.avatar }),
     },
     publisher: {
       '@type': 'Organization',
@@ -319,19 +260,10 @@ export function generateStructuredData(post: BlogPost, siteUrl: string) {
     },
     mainEntityOfPage: {
       '@type': 'WebPage',
-      '@id': `${siteUrl}${post.url}`,
+      '@id': `${siteUrl}/blog/${post.slug}`,
     },
-    wordCount: post.wordCount,
+    wordCount: post.readingTime.words,
     articleSection: post.category,
     keywords: post.tags.join(', '),
   };
-}
-
-export function generateOGImage(title: string, category: string): string {
-  const params = new URLSearchParams({
-    title,
-    category,
-  });
-  
-  return `/api/og?${params.toString()}`;
 }

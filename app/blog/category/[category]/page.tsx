@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { BlogGrid } from '../../components/BlogGrid';
-import { getAllCategories, getPostsByCategory, slugify } from '../../utils';
+import { getAllCategories, getPostsByCategory, getCategoryBySlug, slugify } from '../../utils';
 
 interface CategoryPageProps {
   params: {
@@ -22,8 +22,7 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
-  const categories = getAllCategories();
-  const category = categories.find(cat => cat.slug === params.category);
+  const category = getCategoryBySlug(params.category);
   
   if (!category) {
     return {
@@ -49,8 +48,7 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
 }
 
 export default function CategoryPage({ params, searchParams }: CategoryPageProps) {
-  const categories = getAllCategories();
-  const category = categories.find(cat => cat.slug === params.category);
+  const category = getCategoryBySlug(params.category);
   
   if (!category) {
     notFound();

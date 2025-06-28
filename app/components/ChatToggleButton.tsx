@@ -13,6 +13,8 @@ declare global {
 
 export default function ChatToggleButton() {
   useEffect(() => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+    
     const showChat = () => {
       window.tidioChatApi?.show();
       window.tidioChatApi?.open();
