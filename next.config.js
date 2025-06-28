@@ -14,7 +14,6 @@ const nextConfig = {
   experimental: {
     scrollRestoration: true,
     serverComponentsExternalPackages: ['@prisma/client'],
-    optimizeCss: true,
     esmExternals: true,
     serverMinification: true,
     instrumentationHook: true,
