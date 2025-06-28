@@ -86,8 +86,11 @@ The repository includes a comprehensive `vercel.json` configuration with:
 - Referrer Policy, Permissions Policy
 
 ### Automated Processes
-- **Instagram Refresh:** Every 6 hours via cron job
-- **Analytics Tracking:** Daily data aggregation
+- **Daily Maintenance:** Single cron job at 06:00 UTC (compliant with Hobby plan)
+  - Instagram feed refresh
+  - Analytics data aggregation  
+  - Cache cleanup and optimization
+  - System health monitoring
 - **Health Checks:** Built-in monitoring endpoints
 
 ## 📊 Monitoring & Health Checks
