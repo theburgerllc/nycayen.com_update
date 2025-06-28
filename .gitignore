@@ -102,3 +102,4 @@ Thumbs.db
 logs
 *.log
 .env*.local
+.env.vercel.generated
