@@ -35,7 +35,8 @@
     "deploy:vercel": "npm run deploy:check && vercel",
     "test:cron": "node scripts/test-cron.js",
     "test:cron:local": "node scripts/test-cron.js --local",
-    "vercel:setup": "node scripts/vercel-setup.js"
+    "vercel:setup": "node scripts/vercel-setup.js",
+    "env:check": "node scripts/env-check.js"
   },
   "dependencies": {
     "@formspree/react": "^2.5.5",
