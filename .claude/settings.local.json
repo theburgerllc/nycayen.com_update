@@ -1,0 +1,39 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git fetch:*)",
+      "Bash(npm run type-check:*)",
+      "Bash(npm run lint)",
+      "Bash(npm run build:*)",
+      "Bash(rm:*)",
+      "Bash(timeout 120 npm run build)",
+      "Bash(rg:*)",
+      "Bash(timeout 60 npm run build)",
+      "Bash(grep:*)",
+      "Bash(node:*)",
+      "Bash(npm run dev:*)",
+      "Bash(mkdir:*)",
+      "Bash(timeout 300 npm run build 2 >& 1)",
+      "Bash(find:*)",
+      "Bash(timeout 180s npm run build)",
+      "Bash(touch:*)",
+      "Bash(curl:*)",
+      "Bash(npx playwright test:*)",
+      "Bash(npx playwright install:*)",
+      "Bash(pkill:*)",
+      "Bash(npm run start:*)",
+      "Bash(ls:*)",
+      "Bash(chmod:*)",
+      "Bash(npm run deploy:check:*)",
+      "Bash(npm run test:ci:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(cat:*)",
+      "Bash(npm install:*)",
+      "Bash(vercel:*)",
+      "Bash(npm run vercel:setup:*)"
+    ],
+    "deny": []
+  }
+}
